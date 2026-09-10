@@ -1,0 +1,78 @@
+<settings>
+  <setting propertyKey="@Properties.targetPaceSec" title="@Strings.sTarget">
+    <settingConfig type="list">
+      <listEntry value="80">@Strings.p120</listEntry>
+      <listEntry value="90">@Strings.p130</listEntry>
+      <listEntry value="100">@Strings.p140</listEntry>
+      <listEntry value="110">@Strings.p150</listEntry>
+      <listEntry value="120">@Strings.p200</listEntry>
+      <listEntry value="135">@Strings.p215</listEntry>
+      <listEntry value="150">@Strings.p230</listEntry>
+      <listEntry value="180">@Strings.p300</listEntry>
+    </settingConfig>
+  </setting>
+
+  <setting propertyKey="@Properties.units" title="@Strings.sUnits">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.uMetres</listEntry>
+      <listEntry value="1">@Strings.uYards</listEntry>
+    </settingConfig>
+  </setting>
+
+  <setting propertyKey="@Properties.toleranceSec" title="@Strings.sTolerance">
+    <settingConfig type="numeric" min="1" max="20"/>
+  </setting>
+
+  <setting propertyKey="@Properties.fastThresholdSec" title="@Strings.sFastThr">
+    <settingConfig type="numeric" min="2" max="30"/>
+  </setting>
+
+  <setting propertyKey="@Properties.gaugeRangeSec" title="@Strings.sRange">
+    <settingConfig type="numeric" min="5" max="60"/>
+  </setting>
+
+  <setting propertyKey="@Properties.hapticsEnabled" title="@Strings.sHaptics">
+    <settingConfig type="boolean"/>
+  </setting>
+
+  <setting propertyKey="@Properties.hapticsOnPace" title="@Strings.sHapticsOnPace">
+    <settingConfig type="boolean"/>
+  </setting>
+
+  <setting propertyKey="@Properties.vibeIntensity" title="@Strings.sVibe">
+    <settingConfig type="numeric" min="40" max="100"/>
+  </setting>
+
+  <setting propertyKey="@Properties.poolPresetCm" title="@Strings.sPool">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.poolAuto</listEntry>
+      <listEntry value="1829">@Strings.pool20y</listEntry>
+      <listEntry value="2000">@Strings.pool20m</listEntry>
+      <listEntry value="2286">@Strings.pool25y</listEntry>
+      <listEntry value="2500">@Strings.pool25m</listEntry>
+      <listEntry value="3048">@Strings.pool33y</listEntry>
+      <listEntry value="3333">@Strings.pool33m</listEntry>
+      <listEntry value="4572">@Strings.pool50y</listEntry>
+      <listEntry value="5000">@Strings.pool50m</listEntry>
+    </settingConfig>
+  </setting>
+
+  <setting propertyKey="@Properties.buzzCountOnPace" title="@Strings.sBuzzOnPace">
+    <settingConfig type="numeric" min="0" max="5"/>
+  </setting>
+
+  <setting propertyKey="@Properties.buzzCountSlow" title="@Strings.sBuzzSlow">
+    <settingConfig type="numeric" min="0" max="5"/>
+  </setting>
+
+  <setting propertyKey="@Properties.buzzCountFast" title="@Strings.sBuzzFast">
+    <settingConfig type="numeric" min="0" max="5"/>
+  </setting>
+
+  <setting propertyKey="@Properties.timeDisplayMode" title="@Strings.sTimeMode">
+    <settingConfig type="list">
+      <listEntry value="0">@Strings.timeSession</listEntry>
+      <listEntry value="1">@Strings.timeLap</listEntry>
+    </settingConfig>
+  </setting>
+</settings>
