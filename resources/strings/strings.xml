@@ -1,0 +1,37 @@
+<strings>
+  <string id="AppName">PoolPacer</string>
+  <string id="sTarget">Target pace</string>
+  <string id="sUnits">Units</string>
+  <string id="sTolerance">On-pace tolerance (s/100)</string>
+  <string id="sFastThr">Too-fast threshold (s/100)</string>
+  <string id="sRange">Gauge range (s/100)</string>
+  <string id="sHaptics">Vibration alerts</string>
+  <string id="sHapticsOnPace">Buzz when on pace</string>
+  <string id="sVibe">Vibration strength</string>
+  <string id="sPool">Pool length</string>
+  <string id="poolAuto">Auto-detect</string>
+  <string id="pool20y">20 yd</string>
+  <string id="pool20m">20 m</string>
+  <string id="pool25y">25 yd</string>
+  <string id="pool25m">25 m</string>
+  <string id="pool33y">33 1/3 yd</string>
+  <string id="pool33m">33 1/3 m</string>
+  <string id="pool50y">50 yd</string>
+  <string id="pool50m">50 m</string>
+  <string id="uMetres">Metres</string>
+  <string id="uYards">Yards</string>
+  <string id="p120">1:20 /100</string>
+  <string id="p130">1:30 /100</string>
+  <string id="p140">1:40 /100</string>
+  <string id="p150">1:50 /100</string>
+  <string id="p200">2:00 /100</string>
+  <string id="p215">2:15 /100</string>
+  <string id="p230">2:30 /100</string>
+  <string id="p300">3:00 /100</string>
+  <string id="sBuzzOnPace">Buzzes: on pace</string>
+  <string id="sBuzzSlow">Buzzes: too slow</string>
+  <string id="sBuzzFast">Buzzes: too fast</string>
+  <string id="sTimeMode">Bottom time readout</string>
+  <string id="timeSession">Session total</string>
+  <string id="timeLap">Current lap</string>
+</strings>

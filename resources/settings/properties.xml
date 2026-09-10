@@ -1,0 +1,15 @@
+<properties>
+  <property id="targetPaceSec"       type="number">120</property>
+  <property id="units"               type="number">0</property>
+  <property id="poolPresetCm"       type="number">0</property>
+  <property id="toleranceSec"        type="number">12</property>
+  <property id="fastThresholdSec"    type="number">8</property>
+  <property id="gaugeRangeSec"       type="number">15</property>
+  <property id="hapticsEnabled"      type="boolean">true</property>
+  <property id="hapticsOnPace"       type="boolean">true</property>
+  <property id="vibeIntensity"       type="number">80</property>
+  <property id="buzzCountOnPace"     type="number">1</property>
+  <property id="buzzCountSlow"       type="number">2</property>
+  <property id="buzzCountFast"       type="number">3</property>
+  <property id="timeDisplayMode"     type="number">0</property>
+</properties>

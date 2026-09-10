@@ -1,0 +1,21 @@
+<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
+  <iq:application
+      entry="PoolPacerApp"
+      id="36e4cb1ee7da4f5a9a27283984123a5e"
+      launcherIcon="@Drawables.LauncherIcon"
+      minApiLevel="3.2.0"
+      name="@Strings.AppName"
+      type="datafield"
+      version="1.0.0">
+    <iq:products>
+      <iq:product id="descentmk343mm"/>
+      <iq:product id="descentmk351mm"/>
+    </iq:products>
+    <iq:permissions>
+      <iq:uses-permission id="FitContributor"/>
+    </iq:permissions>
+    <iq:languages>
+      <iq:language>eng</iq:language>
+    </iq:languages>
+  </iq:application>
+</iq:manifest>
