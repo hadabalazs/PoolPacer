@@ -69,10 +69,15 @@
     <settingConfig type="numeric" min="0" max="5"/>
   </setting>
 
-  <setting propertyKey="@Properties.timeDisplayMode" title="@Strings.sTimeMode">
+  <setting propertyKey="@Properties.buzzGapMs" title="@Strings.sBuzzGap">
+    <settingConfig type="numeric" min="50" max="500"/>
+  </setting>
+
+  <setting propertyKey="@Properties.footerMode" title="@Strings.sFooterMode">
     <settingConfig type="list">
-      <listEntry value="0">@Strings.timeSession</listEntry>
-      <listEntry value="1">@Strings.timeLap</listEntry>
+      <listEntry value="0">@Strings.footerDistance</listEntry>
+      <listEntry value="1">@Strings.footerTime</listEntry>
+      <listEntry value="2">@Strings.footerBoth</listEntry>
     </settingConfig>
   </setting>
 </settings>

@@ -21,3 +21,6 @@ Thumbs.db
 developer_key
 *.pem
 *.jwk
+
+# Scratch: SDK device dump
+devices.tsv

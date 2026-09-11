@@ -76,3 +76,16 @@ Actively in development and testing. The live speed-needle behavior (`Activity.I
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Store identity
+
+The Connect IQ store keys updates off the manifest's `id`, so it must never
+change for a published app or existing users stop receiving updates.
+
+- **Public listing (current):** `8ca92568669844049358da7b3fb94cd6`
+- **Beta listing (retired):** `36e4cb1ee7da4f5a9a27283984123a5e`
+
+The original ID was only ever used for a beta-flagged listing. Connect IQ has
+no way to convert a beta app to a public one, so the public release was issued
+under a new ID and the beta listing retired. Keep the old ID recorded here in
+case that listing ever needs a final update.

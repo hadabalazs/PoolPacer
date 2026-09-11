@@ -73,14 +73,22 @@ module PaceMath {
         return targetPaceSec.toFloat() * (poolLengthM / unitBaseM);
     }
 
-    // delta positive = slower than target.
+    // delta positive = slower than target. tol and fastThr are independent
+    // settings (a user can set either one larger than the other), so each
+    // side of the scale is checked against its OWN "very" multiple rather
+    // than against the other side's threshold -- that used to make the
+    // FAST tier unreachable whenever fastThr was set smaller than tol
+    // (which is exactly the shipped default), because a delta extreme
+    // enough to be VERY_FAST on the old shared scale always got caught by
+    // the fast check before the slow-derived one. Symmetric 2x-per-side
+    // multiples fix that for any combination of settings.
     function classify(delta as Float, tol as Number, fastThr as Number) as Number {
         var t = tol.toFloat();
         var f = fastThr.toFloat();
         if (delta > t * 2.0)  { return ZONE_VERY_SLOW; }
         if (delta > t)        { return ZONE_SLOW; }
-        if (delta < -f)       { return ZONE_VERY_FAST; }
-        if (delta < -t)       { return ZONE_FAST; }
+        if (delta < -f * 2.0) { return ZONE_VERY_FAST; }
+        if (delta < -f)       { return ZONE_FAST; }
         return ZONE_ON;
     }
 

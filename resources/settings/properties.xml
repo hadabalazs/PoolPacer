@@ -11,5 +11,6 @@
   <property id="buzzCountOnPace"     type="number">1</property>
   <property id="buzzCountSlow"       type="number">2</property>
   <property id="buzzCountFast"       type="number">3</property>
-  <property id="timeDisplayMode"     type="number">0</property>
+  <property id="buzzGapMs"           type="number">150</property>
+  <property id="footerMode"          type="number">0</property>
 </properties>

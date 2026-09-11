@@ -31,7 +31,9 @@
   <string id="sBuzzOnPace">Buzzes: on pace</string>
   <string id="sBuzzSlow">Buzzes: too slow</string>
   <string id="sBuzzFast">Buzzes: too fast</string>
-  <string id="sTimeMode">Bottom time readout</string>
-  <string id="timeSession">Session total</string>
-  <string id="timeLap">Current lap</string>
+  <string id="sBuzzGap">Buzz pulse gap (ms)</string>
+  <string id="sFooterMode">Bottom readout</string>
+  <string id="footerDistance">Total distance</string>
+  <string id="footerTime">Total time</string>
+  <string id="footerBoth">Distance and time</string>
 </strings>

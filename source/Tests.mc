@@ -28,8 +28,21 @@ function testClassifyBoundaries(logger as Logger) as Boolean {
     return PaceMath.classify(3.0, 3, 8) == PaceMath.ZONE_ON
         && PaceMath.classify(3.1, 3, 8) == PaceMath.ZONE_SLOW
         && PaceMath.classify(6.1, 3, 8) == PaceMath.ZONE_VERY_SLOW
-        && PaceMath.classify(-3.1, 3, 8) == PaceMath.ZONE_FAST
-        && PaceMath.classify(-8.1, 3, 8) == PaceMath.ZONE_VERY_FAST;
+        && PaceMath.classify(-8.0, 3, 8) == PaceMath.ZONE_ON
+        && PaceMath.classify(-8.1, 3, 8) == PaceMath.ZONE_FAST
+        && PaceMath.classify(-16.1, 3, 8) == PaceMath.ZONE_VERY_FAST;
+}
+
+// The bug this locks in: with the app's SHIPPED defaults (tolerance 12,
+// fast-threshold 8 -- i.e. fastThr < tol), the old classify() made ZONE_FAST
+// unreachable because it checked the fast-threshold multiple before the
+// tolerance-derived one, regardless of which was actually larger. FAST must
+// be reachable no matter which of the two settings the user sets larger.
+(:test)
+function testFastZoneReachableRegardlessOfSettingOrder(logger as Logger) as Boolean {
+    return PaceMath.classify(-7.0, 12, 8) == PaceMath.ZONE_ON
+        && PaceMath.classify(-9.0, 12, 8) == PaceMath.ZONE_FAST
+        && PaceMath.classify(-17.0, 12, 8) == PaceMath.ZONE_VERY_FAST;
 }
 
 (:test)
