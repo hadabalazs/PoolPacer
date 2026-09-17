@@ -45,6 +45,6 @@ if [ "$cur" = "$new" ]; then
 fi
 
 sed -i.tmp "s/id=\"$cur\"/id=\"$new\"/" "$MANIFEST"
-rm -f "$MANIFEST.tmp"
+rm -f "$MANIFEST.tmp" 2>/dev/null || true   # some sandboxes cannot unlink
 echo "switched: $(label "$cur") -> $(label "$new")  ($new)"
 echo "rebuild before uploading."

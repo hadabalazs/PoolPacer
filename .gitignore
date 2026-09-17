@@ -12,6 +12,7 @@ source/external-mir/
 # Backup files left by editors
 *.bak
 *.bak.png
+*.tmp
 
 # OS cruft
 .DS_Store

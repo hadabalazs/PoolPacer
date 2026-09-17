@@ -24,7 +24,10 @@ class PoolPacerView extends WatchUi.DataField {
     const FOOTER_BOTH     = 2;
 
     // ---- settings --------------------------------------------------------
-    hidden var sTargetPaceSec  as Number = 120;
+    hidden var sTargetTimeMin  as Number = 2;
+    hidden var sTargetTimeSec  as Number = 0;
+    hidden var sTargetDistance as Number = 100;    // in the user's display units
+    hidden var sTargetPaceSec  as Number = 120;    // DERIVED, per 100 units
     hidden var sUnits          as Number = 0;      // 0 = m, 1 = yd
     hidden var sPoolPresetM    as Float  = 0.0;   // 0 = auto-detect
     hidden var sTolerance      as Number = 12;
@@ -45,12 +48,9 @@ class PoolPacerView extends WatchUi.DataField {
     hidden var lastDistanceM   as Float  = 0.0;
     hidden var sessionDistanceM as Float = 0.0;
     hidden var lastLengthMs    as Number = 0;
-    hidden var lengthCount     as Number = 0;
     hidden var nowMs           as Number = 0;
     hidden var lastPaceSec100  as Float  = 0.0;
     hidden var lastDelta       as Float  = 0.0;
-    hidden var liveDelta       as Float  = 0.0;
-    hidden var hasLiveSpeed    as Boolean = false;
     hidden var lapDeltaSum     as Float  = 0.0;
     hidden var lapLengths      as Number = 0;
     hidden var onPaceCount     as Number = 0;
@@ -67,7 +67,6 @@ class PoolPacerView extends WatchUi.DataField {
     hidden var arcPenThick as Number = 26;
     hidden var bigFont;
     hidden var smallFont = Graphics.FONT_XTINY;
-    hidden var footerFont = Graphics.FONT_MEDIUM;
     hidden var compact as Boolean = false;
 
     // ---- cached haptics ------------------------------------------------
@@ -89,7 +88,9 @@ class PoolPacerView extends WatchUi.DataField {
     }
 
     function loadSettings() as Void {
-        sTargetPaceSec = propNum("targetPaceSec", 120);
+        sTargetTimeMin  = propNum("targetTimeMin", 2);
+        sTargetTimeSec  = propNum("targetTimeSec", 0);
+        sTargetDistance = propNum("targetDistance", 100);
         sUnits         = propNum("units", 0);
         sPoolPresetM   = propNum("poolPresetCm", 0).toFloat() / 100.0;
         sTolerance     = propNum("toleranceSec", 12);
@@ -104,6 +105,16 @@ class PoolPacerView extends WatchUi.DataField {
         sBuzzGapMs     = propNum("buzzGapMs", 150);
         sFooterMode    = propNum("footerMode", FOOTER_DISTANCE);
         unitBaseM = (sUnits == 1) ? UNIT_BASE_YARDS : UNIT_BASE_METRIC;
+
+        // The target is entered as a free time over a free distance, then
+        // collapsed here into one per-100-unit number. Everything downstream
+        // -- delta, classify(), the gauge, the FIT fields -- keeps working in
+        // that single unit and neither knows nor cares how it was typed.
+        // unitBaseM must already be set: the conversion depends on it.
+        var t = PaceMath.targetPaceSec100(sTargetTimeMin * 60 + sTargetTimeSec,
+                                          sTargetDistance, sUnits, unitBaseM);
+        sTargetPaceSec = (t > 0) ? t : 120;
+
         if (sPoolPresetM > 0.0) { poolLengthM = sPoolPresetM; }
         buildHaptics();
     }
@@ -182,7 +193,6 @@ class PoolPacerView extends WatchUi.DataField {
         arcPenThick = (arcPenThin * 2.6).toNumber();
         bigFont = pickBigFont();
         smallFont = Graphics.FONT_XTINY;
-        footerFont = Graphics.FONT_LARGE;
     }
 
     hidden function pickBigFont() {
@@ -198,16 +208,20 @@ class PoolPacerView extends WatchUi.DataField {
         var ts = (info has :timerState) ? info.timerState : null;
         if (ts != null && ts != Activity.TIMER_STATE_ON) { return; }
 
-        updateLiveSpeed(info);
-
         var dist = (info.elapsedDistance != null) ? info.elapsedDistance : 0.0;
         var now  = (info.timerTime != null) ? info.timerTime : 0;
         nowMs = now;
-        sessionDistanceM = dist;
 
         // DEBUG HARNESS: uncomment for dry-land testing. Safe to leave
         // uncommented -- in a release build debugDistance() is a pass-through.
         // dist = debugDistance(dist, now);
+
+        // AFTER the harness, deliberately. Everything on screen has to come
+        // from ONE distance stream: assigning this above the harness line
+        // left the footer showing the simulator's raw continuously-ticking
+        // elapsedDistance while the gauge and pace ran off the harness's
+        // clean pool lengths -- two different numbers describing one swim.
+        sessionDistanceM = dist;
 
         var advanced = dist - lastDistanceM;
 
@@ -231,27 +245,6 @@ class PoolPacerView extends WatchUi.DataField {
         // and onTimerResume() re-stamps the length start on the way back in.
     }
 
-    // EXPERIMENTAL: currentSpeed is a generic, documented Activity.Info field
-    // (metres/sec) and is believed to be what Garmin's own native "Current
-    // Pace" swim field reads from -- a continuously-updating reading, unlike
-    // elapsedDistance below which only jumps once a length is detected.
-    // Pool swim has no GPS though, so whether this is actually populated
-    // smoothly mid-length (vs. staying at 0, or only updating at wall
-    // touches) is NOT yet confirmed on this hardware. If it turns out to be
-    // unreliable in the pool, the needle just falls back to the last
-    // completed length's pace (see drawGauge()) -- nothing else depends on
-    // this being accurate, so it's safe to leave in and verify on a real
-    // swim.
-    hidden function updateLiveSpeed(info as Activity.Info) as Void {
-        if (!(info has :currentSpeed) || info.currentSpeed == null || info.currentSpeed <= 0.0) {
-            hasLiveSpeed = false;
-            return;
-        }
-        var pace100 = unitBaseM / info.currentSpeed;
-        liveDelta = pace100 - sTargetPaceSec.toFloat();
-        hasLiveSpeed = true;
-    }
-
     // compute() samples at 1 Hz, so every split quantises to a whole second.
     // One second of split error is (unitBase / poolLength) seconds per 100 --
     // 4 s/100 in a 25 m pool, 5 s/100 in a 20 m pool. If the user's
@@ -269,19 +262,10 @@ class PoolPacerView extends WatchUi.DataField {
     hidden function effectiveTolerance() as Number { return quantizeGuard(sTolerance); }
     hidden function effectiveFastThreshold() as Number { return quantizeGuard(sFastThreshold); }
 
-    // Two separate accounting streams, and keeping them separate matters:
-    //
-    //   lengthCount  -- lengths SWUM. A fact: the wall was touched n times.
-    //                   Counted unconditionally.
-    //   scoredLengths/lapLengths/lapDeltaSum/onPaceCount -- lengths we have
-    //                   a USABLE split for, and so an honest pace.
-    //
-    // These used to be the same loop, sitting below the plausibility guard,
-    // so an unusable split dropped the length from the distance total as
-    // well as from the pace stats -- the swim silently came up short.
+    // Only lengths with a USABLE split feed the statistics. Distance is not
+    // counted here at all -- it comes from the watch's own elapsedDistance,
+    // which is authoritative and cannot drift out of step with a miscount.
     hidden function onLengthComplete(n as Number, totalMs as Number) as Void {
-        for (var i = 0; i < n; i++) { lengthCount++; }
-
         var splitSec = (totalMs.toFloat() / n.toFloat()) / 1000.0;
         if (!PaceMath.isPlausibleSplit(splitSec)) { return; }
 
@@ -360,13 +344,10 @@ class PoolPacerView extends WatchUi.DataField {
         lastDistanceM = 0.0;
         sessionDistanceM = 0.0;
         lastLengthMs = 0;
-        lengthCount = 0;
         nowMs = 0;
         lapLengths = 0;
         lastPaceSec100 = 0.0;
         lastDelta = 0.0;
-        liveDelta = 0.0;
-        hasLiveSpeed = false;
         lapDeltaSum = 0.0;
         onPaceCount = 0;
         scoredLengths = 0;
@@ -418,11 +399,18 @@ class PoolPacerView extends WatchUi.DataField {
         var tol = effectiveTolerance().toFloat();
         var fastThr = effectiveFastThreshold().toFloat();
 
-        // A live reading wins while one is available; otherwise the gauge
-        // parks on the last completed length, which still answers "how did
-        // that one go?". It never blanks out.
-        var haveReading  = hasLiveSpeed || hasData;
-        var needleDelta  = hasLiveSpeed ? liveDelta : lastDelta;
+        // ONE source. The arc and the big number both read the last
+        // completed length, so they can never contradict each other.
+        //
+        // This used to drive the arc from Activity.Info.currentSpeed for a
+        // live mid-length reading. It read well on paper and in practice put
+        // the two halves of the screen in open disagreement: the number
+        // saying 2:22 against a 2:00 target -- slow, red -- while the arc lit
+        // orange for "fast", because currentSpeed was describing something
+        // that was not the swim. A gauge that argues with the number beside
+        // it is worse than no gauge.
+        var haveReading  = hasData;
+        var needleDelta  = lastDelta;
         var activeZone   = -1;
         if (haveReading) {
             activeZone = zoneFor(needleDelta, effectiveTolerance(), effectiveFastThreshold());
@@ -494,12 +482,17 @@ class PoolPacerView extends WatchUi.DataField {
         var txt = hasData ? PaceMath.formatPace(lastPaceSec100) : "--:--";
 
         var unit = (sUnits == 1) ? "/100y" : "/100m";
-        var caption = "TGT " + PaceMath.formatPace(sTargetPaceSec.toFloat()) + unit;
-        // The caption tucks up under the arc tips and the number sits
-        // directly beneath it. Measured off arcR rather than a screen
-        // fraction so 43 mm and 51 mm keep the same relationship to the arc.
+        // No "TGT" label -- "2:00/100m" in the target slot is self-evidently
+        // the target, and the four characters it saves buy real size for the
+        // things you actually read mid-length.
+        var caption = PaceMath.formatPace(sTargetPaceSec.toFloat()) + unit;
+        // The caption sits UP inside the crescent, close under the arc, which
+        // pulls the pace number up with it and frees the whole lower third of
+        // the screen for a much larger distance readout. Measured off arcR
+        // rather than a screen fraction so 43 mm and 51 mm keep the same
+        // relationship to the arc.
         var capH = dc.getFontHeight(smallFont);
-        var capY = cy - (arcR * 0.28).toNumber();
+        var capY = cy - (arcR * 0.46).toNumber();
         var numY = capY + capH + 2;
 
         // Where the footer is allowed to start. The big numeric font is tall
@@ -514,50 +507,167 @@ class PoolPacerView extends WatchUi.DataField {
         dc.drawText(cx, numY, bigFont, txt, Graphics.TEXT_JUSTIFY_CENTER);
     }
     // Bottom readout: total distance (the default), total elapsed time, or
-    // both on one line. No caption under it -- "25m" and "2:55" already say
-    // what they are. Width is MEASURED, never assumed: the worst case
-    // ("3000m  1:02:33") is more than twice the length of the opening "0m",
-    // so the font steps down rather than running off a 43 mm screen. The
-    // vertical position is measured too, off the bottom of the pace number.
+    // both on one line.
+    //
+    // Distance and time are drawn in a NUMBER face, far larger than any text
+    // font the SDK offers, because this line has to be legible through
+    // goggles, at arm's length, with water on the lens. Number faces carry
+    // digits, ':' and '.' but NO letters, so the unit is drawn beside the
+    // digits in a small text font. Digits and unit are treated as one block
+    // and that block is centred, so the pair stays balanced under the pace
+    // number at any digit count. "Both" mode puts letters in the middle of
+    // the string and so falls back to a text font -- the one mode where you
+    // read two values at once and size has to give way.
     hidden function drawFooter(dc as Graphics.Dc) as Void {
-        var h = dc.getHeight();
+        if (sFooterMode == FOOTER_BOTH) { drawFooterBoth(dc); return; }
 
-        // The watch's own elapsedDistance, not lengthCount x poolLength --
+        // The watch's own elapsedDistance, not a length count x pool length --
         // it is authoritative, needs no pool-length guess, and cannot drift
         // out of step with the total if a length is ever miscounted.
-        var distTxt = PaceMath.formatDistance(sessionDistanceM, sUnits);
-        var timeTxt = PaceMath.formatElapsed(nowMs.toFloat() / 1000.0);
+        var numPart = (sFooterMode == FOOTER_TIME)
+            ? PaceMath.formatElapsed(nowMs.toFloat() / 1000.0)
+            : PaceMath.formatDistanceValue(sessionDistanceM, sUnits);
+        var unitPart = (sFooterMode == FOOTER_TIME) ? "" : ((sUnits == 1) ? "y" : "m");
 
-        var valueTxt = distTxt;
-        if (sFooterMode == FOOTER_TIME) {
-            valueTxt = timeTxt;
-        } else if (sFooterMode == FOOTER_BOTH) {
-            valueTxt = distTxt + "  " + timeTxt;
+        var uf = Graphics.FONT_SMALL;
+        var nf = fitNumFont(dc, numPart, unitWidth(dc, unitPart, uf));
+        drawValueWithUnit(dc, footerY(dc, dc.getFontHeight(nf)),
+                          numPart, unitPart, nf, uf);
+    }
+
+    // Time on top, distance underneath. Stacked rather than side by side:
+    // two values on one line forced a text font small enough to be useless
+    // through goggles, whereas stacking keeps a number face on both.
+    //
+    // The face is chosen so BOTH lines fit -- two line heights inside the
+    // space under the pace number, and each line inside the chord width at
+    // its OWN height, since the lower line sits where the round screen is
+    // narrower. If even the smallest face bottoms out, the pair is nudged
+    // up rather than allowed to run off the bottom.
+    hidden function drawFooterBoth(dc as Graphics.Dc) as Void {
+        var h = dc.getHeight();
+        var timeTxt = PaceMath.formatElapsed(nowMs.toFloat() / 1000.0);
+        var distNum = PaceMath.formatDistanceValue(sessionDistanceM, sUnits);
+        var unitTxt = (sUnits == 1) ? "y" : "m";
+        var uf = Graphics.FONT_TINY;
+        var wu = unitWidth(dc, unitTxt, uf);
+
+        var top    = centreBottomY + (h * 0.01).toNumber();
+        var budget = (h - (h * 0.04).toNumber()) - top;
+
+        var ladder = [ Graphics.FONT_NUMBER_MEDIUM, Graphics.FONT_NUMBER_MILD,
+                       Graphics.FONT_LARGE, Graphics.FONT_MEDIUM,
+                       Graphics.FONT_SMALL, Graphics.FONT_TINY ];
+        var nf = Graphics.FONT_TINY;
+        for (var i = 0; i < ladder.size(); i++) {
+            var f    = ladder[i];
+            var fh   = dc.getFontHeight(f);
+            // Number faces carry a lot of empty descender space; 0.88 of the
+            // box closes the gap between the lines without letting the
+            // glyphs touch.
+            var step = (fh * 0.88).toNumber();
+            if (step + fh > budget) { continue; }
+            if (dc.getTextWidthInPixels(timeTxt, f) <= usableWidthAt(dc, top, fh)
+             && dc.getTextWidthInPixels(distNum, f) <= usableWidthAt(dc, top + step, fh) - wu) {
+                nf = f;
+                break;
+            }
         }
 
-        var font = fitFont(dc, valueTxt);
-        var fh = dc.getFontHeight(font);
-
-        // Sit just under the pace number, but never run off the bottom of the
-        // screen -- whichever constraint binds first wins.
-        var vy = centreBottomY + (h * 0.02).toNumber();
-        var maxY = h - fh - (h * 0.10).toNumber();
-        if (vy > maxY) { vy = maxY; }
+        var fh2  = dc.getFontHeight(nf);
+        var step = (fh2 * 0.88).toNumber();
+        var y1   = top;
+        var over = (top + step + fh2) - (h - (h * 0.02).toNumber());
+        if (over > 0) { y1 -= over; }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
-        dc.drawText(cx, vy, font, valueTxt, Graphics.TEXT_JUSTIFY_CENTER);
+        dc.drawText(cx, y1, nf, timeTxt, Graphics.TEXT_JUSTIFY_CENTER);
+        drawValueWithUnit(dc, y1 + step, distNum, unitTxt, nf, uf);
     }
 
-    // Largest font, footerFont downwards, whose rendering of txt still fits
-    // across the bottom of the screen.
-    hidden function fitFont(dc as Graphics.Dc, txt as String) {
-        var maxW = dc.getWidth() * 0.80;
-        if (dc.getTextWidthInPixels(txt, footerFont) <= maxW) { return footerFont; }
-        if (dc.getTextWidthInPixels(txt, Graphics.FONT_MEDIUM) <= maxW) {
-            return Graphics.FONT_MEDIUM;
-        }
-        return Graphics.FONT_SMALL;
+    // Width the unit letter claims, gap included. 0 when there is no unit.
+    hidden function unitWidth(dc as Graphics.Dc, unitPart as String, uf) as Number {
+        if (unitPart.length() == 0) { return 0; }
+        return dc.getTextWidthInPixels(unitPart, uf) + (dc.getWidth() * 0.012).toNumber();
     }
+
+    // Digits plus unit as ONE centred block, the letter baseline-aligned
+    // against the digits. Shared by the single-value footer and the distance
+    // line of the stacked one so the two can never drift apart.
+    hidden function drawValueWithUnit(dc as Graphics.Dc, y as Number,
+                                      numPart as String, unitPart as String,
+                                      nf, uf) as Void {
+        var wu = unitWidth(dc, unitPart, uf);
+        var wn = dc.getTextWidthInPixels(numPart, nf);
+        var x0 = cx - (wn + wu) / 2;
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(x0, y, nf, numPart, Graphics.TEXT_JUSTIFY_LEFT);
+        if (wu > 0) {
+            var gap = (dc.getWidth() * 0.012).toNumber();
+            dc.drawText(x0 + wn + gap, y + baselineOffset(dc, nf, uf), uf,
+                        unitPart, Graphics.TEXT_JUSTIFY_LEFT);
+        }
+    }
+
+    // Bottom-aligning the two text BOXES does not line the glyphs up: a
+    // number face reserves far more descender space than a small text face,
+    // so the boxes match while the letter sits visibly below the digits.
+    // Align the BASELINES instead -- ascent is the drop from the top of the
+    // box to the baseline, so matching (y + ascent) puts the letter's feet
+    // on the same line as the digits'.
+    hidden function baselineOffset(dc as Graphics.Dc, numFont, unitFont) as Number {
+        if (Graphics has :getFontAscent) {
+            return Graphics.getFontAscent(numFont) - Graphics.getFontAscent(unitFont);
+        }
+        // Fallback: a number face spends roughly a quarter of its box below
+        // the baseline. Close enough that the letter never drops under the
+        // digits, which is the failure that matters.
+        return ((dc.getFontHeight(numFont) - dc.getFontHeight(unitFont)) * 0.72).toNumber();
+    }
+
+    // Sit just under the pace number, but never run off the bottom of the
+    // screen -- whichever constraint binds first wins.
+    hidden function footerY(dc as Graphics.Dc, fh as Number) as Number {
+        var h = dc.getHeight();
+        var vy = centreBottomY + (h * 0.02).toNumber();
+        var maxY = h - fh - (h * 0.06).toNumber();
+        if (vy > maxY) { vy = maxY; }
+        return vy;
+    }
+
+    // Usable width at a given height. On a ROUND screen the bottom of the
+    // display is far narrower than the middle, so a flat percentage of the
+    // diameter is a lie down there -- measure the chord at the text's own
+    // bottom edge, which is its widest constraint.
+    hidden function usableWidthAt(dc as Graphics.Dc, y as Number, fh as Number) as Number {
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        if (h < w * 0.9) { return (w * 0.90).toNumber(); }   // square/rectangular
+        var r  = w / 2.0;
+        var dy = (y + fh) - h / 2.0;
+        if (dy < 0.0) { dy = 0.0; }
+        if (dy >= r)  { return (w * 0.30).toNumber(); }
+        return (2.0 * Math.sqrt(r * r - dy * dy) * 0.92).toNumber();
+    }
+
+    // Largest face whose digits still fit once the unit has taken its share.
+    // The ladder runs all the way down to FONT_TINY and, if even that will
+    // not fit, returns it anyway -- a cramped readout beats one that runs
+    // off the edge of the screen. Six digits (100 km in a pool) never
+    // happens, but it degrades instead of clipping if it ever does.
+    hidden function fitNumFont(dc as Graphics.Dc, numPart as String, wu as Number) {
+        var ladder = [ Graphics.FONT_NUMBER_MEDIUM, Graphics.FONT_NUMBER_MILD,
+                       Graphics.FONT_LARGE, Graphics.FONT_MEDIUM,
+                       Graphics.FONT_SMALL, Graphics.FONT_TINY ];
+        for (var i = 0; i < ladder.size(); i++) {
+            var f  = ladder[i];
+            var fh = dc.getFontHeight(f);
+            var av = usableWidthAt(dc, footerY(dc, fh), fh) - wu;
+            if (dc.getTextWidthInPixels(numPart, f) <= av) { return f; }
+        }
+        return Graphics.FONT_TINY;
+    }
+
     // Same numeric-font constraint as drawCentre: FONT_NUMBER_MEDIUM has no
     // letters, so the old "v"/"^"/"=" zone glyphs were drawing as blank
     // space. The zone rides on the COLOUR of the number instead, which reads

@@ -1,6 +1,8 @@
 <strings>
   <string id="AppName">PoolPacer</string>
-  <string id="sTarget">Target pace</string>
+  <string id="sTargetMin">Target time - minutes</string>
+  <string id="sTargetSec">Target time - seconds</string>
+  <string id="sTargetDist">Target distance (in your units)</string>
   <string id="sUnits">Units</string>
   <string id="sTolerance">On-pace tolerance (s/100)</string>
   <string id="sFastThr">Too-fast threshold (s/100)</string>
@@ -20,14 +22,6 @@
   <string id="pool50m">50 m</string>
   <string id="uMetres">Metres</string>
   <string id="uYards">Yards</string>
-  <string id="p120">1:20 /100</string>
-  <string id="p130">1:30 /100</string>
-  <string id="p140">1:40 /100</string>
-  <string id="p150">1:50 /100</string>
-  <string id="p200">2:00 /100</string>
-  <string id="p215">2:15 /100</string>
-  <string id="p230">2:30 /100</string>
-  <string id="p300">3:00 /100</string>
   <string id="sBuzzOnPace">Buzzes: on pace</string>
   <string id="sBuzzSlow">Buzzes: too slow</string>
   <string id="sBuzzFast">Buzzes: too fast</string>

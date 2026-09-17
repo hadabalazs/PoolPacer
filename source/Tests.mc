@@ -89,3 +89,37 @@ function testFormatPoolLength(logger as Logger) as Boolean {
         && PaceMath.formatPoolLength(45.72, 1).equals("50y")
         && PaceMath.formatPoolLength(0.0, 0).equals("?");
 }
+
+// --- free-form target pace: any time over any distance ---
+
+(:test)
+function testTargetPaceMetric(logger as Logger) as Boolean {
+    // 20:00 for 1000 m  ->  2:00 /100 m
+    return PaceMath.targetPaceSec100(1200, 1000, 0, 100.0) == 120
+        // 1:45 for 100 m -> 1:45 /100 m, entered directly
+        && PaceMath.targetPaceSec100(105, 100, 0, 100.0) == 105
+        // 8:00 for 400 m -> 2:00 /100 m
+        && PaceMath.targetPaceSec100(480, 400, 0, 100.0) == 120;
+}
+
+(:test)
+function testTargetPaceYards(logger as Logger) as Boolean {
+    // the yard factor must cancel: 10:00 for 1000 y is exactly 1:00 /100 y
+    return PaceMath.targetPaceSec100(600, 1000, 1, 91.44) == 60
+        && PaceMath.targetPaceSec100(1200, 1000, 1, 91.44) == 120
+        && PaceMath.targetPaceSec100(90, 100, 1, 91.44) == 90;
+}
+
+(:test)
+function testTargetPaceRejectsNonsense(logger as Logger) as Boolean {
+    return PaceMath.targetPaceSec100(0, 1000, 0, 100.0) == 0
+        && PaceMath.targetPaceSec100(1200, 0, 0, 100.0) == 0
+        && PaceMath.targetPaceSec100(-5, 100, 0, 100.0) == 0;
+}
+
+(:test)
+function testFormatDistanceValue(logger as Logger) as Boolean {
+    return PaceMath.formatDistanceValue(1250.0, 0).equals("1250")
+        && PaceMath.formatDistanceValue(0.0, 0).equals("0")
+        && PaceMath.formatDistanceValue(914.4, 1).equals("1000");
+}

@@ -1,15 +1,16 @@
 <settings>
-  <setting propertyKey="@Properties.targetPaceSec" title="@Strings.sTarget">
-    <settingConfig type="list">
-      <listEntry value="80">@Strings.p120</listEntry>
-      <listEntry value="90">@Strings.p130</listEntry>
-      <listEntry value="100">@Strings.p140</listEntry>
-      <listEntry value="110">@Strings.p150</listEntry>
-      <listEntry value="120">@Strings.p200</listEntry>
-      <listEntry value="135">@Strings.p215</listEntry>
-      <listEntry value="150">@Strings.p230</listEntry>
-      <listEntry value="180">@Strings.p300</listEntry>
-    </settingConfig>
+  <!-- Target pace, entered as a free time over a free distance: 20:00 for
+       1000, 1:45 for 100, 10:00 for 1000 y. The distance is in whatever unit
+       the Units setting below is on. The app collapses the two into a per-100
+       pace and shows you that figure on the watch face. -->
+  <setting propertyKey="@Properties.targetTimeMin" title="@Strings.sTargetMin">
+    <settingConfig type="numeric" min="0" max="180" />
+  </setting>
+  <setting propertyKey="@Properties.targetTimeSec" title="@Strings.sTargetSec">
+    <settingConfig type="numeric" min="0" max="59" />
+  </setting>
+  <setting propertyKey="@Properties.targetDistance" title="@Strings.sTargetDist">
+    <settingConfig type="numeric" min="10" max="5000" />
   </setting>
 
   <setting propertyKey="@Properties.units" title="@Strings.sUnits">
@@ -70,7 +71,7 @@
   </setting>
 
   <setting propertyKey="@Properties.buzzGapMs" title="@Strings.sBuzzGap">
-    <settingConfig type="numeric" min="50" max="500"/>
+    <settingConfig type="numeric" min="50" max="1000"/>
   </setting>
 
   <setting propertyKey="@Properties.footerMode" title="@Strings.sFooterMode">

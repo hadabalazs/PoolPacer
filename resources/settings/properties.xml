@@ -1,5 +1,7 @@
 <properties>
-  <property id="targetPaceSec"       type="number">120</property>
+  <property id="targetTimeMin"      type="number">2</property>
+  <property id="targetTimeSec"      type="number">0</property>
+  <property id="targetDistance"     type="number">100</property>
   <property id="units"               type="number">0</property>
   <property id="poolPresetCm"       type="number">0</property>
   <property id="toleranceSec"        type="number">12</property>

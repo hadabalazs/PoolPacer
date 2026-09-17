@@ -62,6 +62,35 @@ module PaceMath {
         return metres.format("%.0f") + "m";
     }
 
+    // Turn a free-form target -- "20:00 for 1000 m", "10:00 for 1000 y",
+    // "1:45 for 100 m" -- into the per-100-unit pace the rest of the app
+    // works in, so every downstream consumer (delta, classify, the gauge,
+    // the FIT fields) is unchanged by how the target was entered.
+    //
+    // targetDist is in the user's DISPLAY units, because that is how they
+    // typed it; units 0 = metres, 1 = yards. For yards the yard-to-metre
+    // factor cancels against unitBaseM and this reduces exactly to
+    // totalSec * 100 / targetDist, which is the identity you want: 10:00
+    // for 1000 y is 1:00 /100 y, no rounding drift.
+    //
+    // Returns 0 for a nonsensical target (zero time or zero distance);
+    // the caller substitutes its own default rather than dividing by it.
+    function targetPaceSec100(totalSec as Number, targetDist as Number,
+                              units as Number, unitBaseM as Float) as Number {
+        if (totalSec <= 0 || targetDist <= 0) { return 0; }
+        var distM = targetDist.toFloat() * ((units == 1) ? 0.9144 : 1.0);
+        if (distM <= 0.0) { return 0; }
+        return ((totalSec.toFloat() * unitBaseM / distM) + 0.5).toNumber();
+    }
+
+    // Just the numeric part of a distance, with no unit letter, for drawing
+    // in a FONT_NUMBER_* face (which carries digits but no letters).
+    function formatDistanceValue(metres as Float, units as Number) as String {
+        if (metres < 0.0) { metres = 0.0; }
+        if (units == 1) { return (metres / 0.9144).format("%.0f"); }
+        return metres.format("%.0f");
+    }
+
     // unitBaseM is 100.0 for metric, 91.44 for yards (100 yd in metres).
     function paceSec100(splitSec as Float, poolLengthM as Float, unitBaseM as Float) as Float {
         if (poolLengthM <= 0.0) { return 0.0; }
